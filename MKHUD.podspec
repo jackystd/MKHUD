@@ -1,5 +1,5 @@
 Pod::Spec.new do |spec|
-  spec.name         = "MKProgressHUD"
+  spec.name         = "MKHUD"
   spec.version      = "0.0.1"
   spec.summary      = "MKHUD"
   spec.description  = <<-DESC

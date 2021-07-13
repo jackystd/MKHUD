@@ -98,7 +98,7 @@ let hud = MKHUDView(frame: self.view.bounds, theme: theme)
 ### Install
 
 ```shell
-pod 'MKProgressHUD', :git => 'https://github.com/jackystd/MKHUD.git', :branch => 'main'
+pod 'MKHUD', :git => 'https://github.com/jackystd/MKHUD.git', :branch => 'main'
 ```
 
 
