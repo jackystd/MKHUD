@@ -79,12 +79,14 @@ public final class MKHUDView: UIView {
         return ai
     }()
     
+    // 背景样式
     public var backgroundStyle: MKHUDBackgroundStyle = .solid {
         didSet {
             contentView.style = backgroundStyle
         }
     }
     
+    // 内边距
     // UIEdgeInsets(.right is invalid)
     public var insets: UIEdgeInsets = MKHUD_DefaultContentInsets {
         didSet {
@@ -92,18 +94,21 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // 竖直方向元素间距
     public var spacing: CGFloat = MKHUD_DefaultItemSpacing {
         didSet {
             remarkConstraints()
         }
     }
     
+    // 圆角
     public var corner: CGFloat = MKHUD_DefaultCorner {
         didSet {
             contentView.layer.cornerRadius = corner
         }
     }
     
+    // 自定义视图
     public var customView: UIView? {
         didSet{
             if mode == .custom {
@@ -112,6 +117,7 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // 标题文案 上label
     public var text: String = "" {
         didSet {
             textLabel.text = text
@@ -122,6 +128,7 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // 详情文案 下label
     public var detailText: String = "" {
         didSet {
             detailLabel.text = detailText
@@ -132,6 +139,7 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // 按钮配置项（标题+回调）
     public var btnConfig: MKHUDButtonConfig? {
         didSet {
             guard let config = btnConfig else {
@@ -142,6 +150,7 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // toast模式
     public var mode: MKHUDMode = .text {
         didSet {
             if mode == oldValue {
@@ -151,17 +160,29 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // 进度百分比
     public var progress: Double = 0.0 {
         didSet {
             updateProgressIfNeed()
         }
     }
     
-    private let theme: MKHUDTheme!
+    // 最小尺寸
+    public var minSize: CGSize? {
+        didSet {
+            resetContent()
+        }
+    }
+    
+    // 延迟自动隐藏
     public var autoHidden: TimeInterval = 0
+    // 动画样式
     public var animationMode: MKHUDAnimationMode = .none
+    // 隐藏后的回调
     public var completionHandle: MKHUDCompletionHandle?
     
+    private let theme: MKHUDTheme!
+
     public init(frame: CGRect, theme: MKHUDTheme = .dark) {
         self.theme = theme
         super.init(frame: frame)
@@ -199,9 +220,24 @@ extension MKHUDView {
     
     private func setupSubviews() {
         addSubview(contentView)
+        resetContent()
     }
     
     private func setupConstraints() {
+        remarkConstraints()
+    }
+    
+    private func resetContent() {
+        // 移除旧约束
+        var constraintsNeedRemove = [NSLayoutConstraint]()
+        for cons in self.constraints {
+            if cons.firstItem as? NSObject == self.contentView && cons.secondItem as? NSObject == self {
+                constraintsNeedRemove.append(cons)
+            }
+        }
+        self.removeConstraints(constraintsNeedRemove)
+        
+        // 添加新约束
         let maxWidth = self.frame.width - 2 * MKHUD_MinOuterMargin
         self.addConstraints(
             [
@@ -210,7 +246,16 @@ extension MKHUDView {
                 contentView.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth)
             ]
         )
-        remarkConstraints()
+        
+        // 支持最小尺寸
+        if let minSize = self.minSize {
+            self.addConstraints(
+                [
+                    contentView.widthAnchor.constraint(greaterThanOrEqualToConstant: minSize.width),
+                    contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: minSize.height)
+                ]
+            )
+        }
     }
 }
 
@@ -370,7 +415,7 @@ extension MKHUDView {
 extension MKHUDView {
     
     @discardableResult
-    class func HUDForView(view: UIView) -> MKHUDView? {
+    public class func HUDForView(view: UIView) -> MKHUDView? {
         for subv in view.subviews.reversed() {
             if let hud = subv as? MKHUDView {
                 return hud
@@ -380,7 +425,7 @@ extension MKHUDView {
     }
     
     @discardableResult
-    class func hideHUDForView(view: UIView, animated: Bool = true) -> Bool {
+    public class func hideHUDForView(view: UIView, animated: Bool = true) -> Bool {
         if let hud = self.HUDForView(view: view) {
             hud.dismiss(animated: animated)
             return true
