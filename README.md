@@ -50,7 +50,7 @@ hub.show(to: self.view)
 #### Mode switching
 
 ```swift
-let hud = self.view.showMKHUDIndicator("Connecting...", theme: tstyle)
+let hud = self.view.showMKHUDIndicator("Connecting...", theme: .dark)
 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
     hud.mode = .determinate
     hud.text = "Download..."
@@ -77,7 +77,7 @@ DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
 #### Custom view
 
 ```swift
-let hud = MKHUDView(frame: self.view.bounds, theme: tstyle)
+let hud = MKHUDView(frame: self.view.bounds, theme: .dark)
 hud.mode = .custom
 let imgv = UIImageView(image: UIImage.init(named: "maya"))
 imgv.frame = CGRect(x: 0, y: 0, width: 128, height: 128)
