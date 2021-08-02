@@ -101,6 +101,16 @@ public final class MKHUDView: UIView {
         }
     }
     
+    // 强制宽高相等（正方形背景）
+    public var suqared: Bool = false {
+        didSet {
+            if suqared == oldValue {
+                return
+            }
+            resetContent()
+        }
+    }
+    
     // 圆角
     public var corner: CGFloat = MKHUD_DefaultCorner {
         didSet {
@@ -255,6 +265,11 @@ extension MKHUDView {
                     contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: minSize.height)
                 ]
             )
+        }
+        
+        // 强制宽高相等
+        if self.suqared {
+            self.addConstraint(contentView.widthAnchor.constraint(equalTo: contentView.heightAnchor))
         }
     }
 }

@@ -6,7 +6,6 @@
 //
 
 import UIKit
-//import MKHUD
 
 class MKHUDTestViewController: UIViewController {
     
@@ -44,6 +43,7 @@ class MKHUDTestViewController: UIViewController {
         
         ("Composite use case",
              [
+                ("My test", #selector(mytest)),
                 ("Quick use case", #selector(quickUseCase)),
                 ("Simulate the download process", #selector(simulateTheDownloadProcess)),
              ]
@@ -90,10 +90,27 @@ class MKHUDTestViewController: UIViewController {
         clickLeftTopCallback?()
     }
     
+    @objc func mytest() {
+        let hud = MKHUDView(frame: self.view.bounds, theme: tstyle)
+        hud.mode = .custom
+        let imgv = UIImageView(image: UIImage.init(named: "lock"))
+        imgv.frame = CGRect(x: 0, y: 0, width: 68, height: 68)
+        hud.customView = imgv
+        hud.insets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        hud.spacing = 5
+        hud.suqared = true
+        hud.text = "Locked"
+        hud.autoHidden = 3.0
+        hud.corner = 10
+        hud.animationMode = .zoomIn
+        hud.show(to: self.view)
+    }
+    
     @objc func showIndeterminate() {
         let hud = MKHUDView(frame: self.view.bounds, theme: tstyle)
         hud.mode = .indeterminate
         hud.autoHidden = 2.0
+        hud.minSize = CGSize(width: 100, height: 100)
         hud.show(to: self.view)
     }
     
