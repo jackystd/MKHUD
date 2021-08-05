@@ -15,6 +15,7 @@ fileprivate let MKHUD_DefaultItemSpacing: CGFloat = 8.0
 fileprivate let MKHUD_DefaultRoundProgressSize: CGSize = CGSize(width: 37, height: 37)
 fileprivate let MKHUD_DefaultBarProgressSize: CGSize = CGSize(width: 128, height: 10)
 
+
 public final class MKHUDView: UIView {
     
     private lazy var contentView: MKHUDBackgroundView = {
@@ -79,29 +80,28 @@ public final class MKHUDView: UIView {
         return ai
     }()
     
-    // 背景样式
+    /// 背景样式
     public var backgroundStyle: MKHUDBackgroundStyle = .solid {
         didSet {
             contentView.style = backgroundStyle
         }
     }
     
-    // 内边距
-    // UIEdgeInsets(.right is invalid)
+    /// 内边距 UIEdgeInsets(.right is invalid)
     public var insets: UIEdgeInsets = MKHUD_DefaultContentInsets {
         didSet {
             remarkConstraints()
         }
     }
     
-    // 竖直方向元素间距
+    /// 竖直方向元素间距
     public var spacing: CGFloat = MKHUD_DefaultItemSpacing {
         didSet {
             remarkConstraints()
         }
     }
     
-    // 强制宽高相等（正方形背景）
+    /// 强制宽高相等（正方形背景）
     public var suqared: Bool = false {
         didSet {
             if suqared == oldValue {
@@ -111,14 +111,14 @@ public final class MKHUDView: UIView {
         }
     }
     
-    // 圆角
+    /// 圆角
     public var corner: CGFloat = MKHUD_DefaultCorner {
         didSet {
             contentView.layer.cornerRadius = corner
         }
     }
     
-    // 自定义视图
+    /// 自定义视图
     public var customView: UIView? {
         didSet{
             if mode == .custom {
@@ -127,7 +127,7 @@ public final class MKHUDView: UIView {
         }
     }
     
-    // 标题文案 上label
+    /// 标题文案 上label
     public var text: String = "" {
         didSet {
             textLabel.text = text
@@ -138,7 +138,7 @@ public final class MKHUDView: UIView {
         }
     }
     
-    // 详情文案 下label
+    /// 详情文案 下label
     public var detailText: String = "" {
         didSet {
             detailLabel.text = detailText
@@ -149,7 +149,7 @@ public final class MKHUDView: UIView {
         }
     }
     
-    // 按钮配置项（标题+回调）
+    /// 按钮配置项（标题+回调）
     public var btnConfig: MKHUDButtonConfig? {
         didSet {
             guard let config = btnConfig else {
@@ -160,7 +160,7 @@ public final class MKHUDView: UIView {
         }
     }
     
-    // toast模式
+    /// toast模式
     public var mode: MKHUDMode = .text {
         didSet {
             if mode == oldValue {
@@ -170,25 +170,25 @@ public final class MKHUDView: UIView {
         }
     }
     
-    // 进度百分比
+    /// 进度百分比
     public var progress: Double = 0.0 {
         didSet {
             updateProgressIfNeed()
         }
     }
     
-    // 最小尺寸
+    /// 最小尺寸
     public var minSize: CGSize? {
         didSet {
             resetContent()
         }
     }
     
-    // 延迟自动隐藏
+    /// 延迟自动隐藏
     public var autoHidden: TimeInterval = 0
-    // 动画样式
+    /// 动画样式
     public var animationMode: MKHUDAnimationMode = .none
-    // 隐藏后的回调
+    /// 隐藏后的回调
     public var completionHandle: MKHUDCompletionHandle?
     
     private let theme: MKHUDTheme!
@@ -247,17 +247,15 @@ extension MKHUDView {
         }
         self.removeConstraints(constraintsNeedRemove)
         
-        // 添加新约束
-        let maxWidth = self.frame.width - 2 * MKHUD_MinOuterMargin
+        // 居中
         self.addConstraints(
             [
                 contentView.centerXAnchor.constraint(equalTo: self.leadingAnchor, constant: self.frame.width.half),
                 contentView.centerYAnchor.constraint(equalTo: self.topAnchor, constant: self.frame.height.half),
-                contentView.widthAnchor.constraint(lessThanOrEqualToConstant: maxWidth)
             ]
         )
         
-        // 支持最小尺寸
+        // 最小尺寸
         if let minSize = self.minSize {
             self.addConstraints(
                 [
@@ -301,6 +299,8 @@ extension MKHUDView {
             preItem = cv
         }
         
+        let maxContentWidth: CGFloat = self.frame.width - 2 * MKHUD_MinOuterMargin - self.insets.left - self.insets.right
+        
         if preItem != topLine {
             contentView.addSubview(preItem)
             contentView.addConstraints(
@@ -312,6 +312,12 @@ extension MKHUDView {
             )
             // Adapt for custom view
             if preItem == customView && !preItem.frame.equalTo(.zero) {
+                // 防止自定义视图太宽 超出屏幕限制
+                if preItem.frame.width > maxContentWidth {
+                    let ph = maxContentWidth * preItem.frame.height / preItem.frame.width
+                    let pw = maxContentWidth
+                    preItem.frame = CGRect(origin: .zero, size: CGSize(width: pw, height: ph))
+                }
                 contentView.addConstraints(
                     [
                         preItem.widthAnchor.constraint(equalToConstant: preItem.frame.width),
@@ -324,12 +330,15 @@ extension MKHUDView {
         var appendItems = [UIView]()
         if text.count > 0 {
             appendItems.append(textLabel)
+            textLabel.preferredMaxLayoutWidth = maxContentWidth
         }
         if detailText.count > 0 {
             appendItems.append(detailLabel)
+            detailLabel.preferredMaxLayoutWidth = maxContentWidth
         }
         if let _ = btnConfig {
             appendItems.append(button)
+            button.titleLabel?.preferredMaxLayoutWidth = maxContentWidth - 20
         }
         
         for item in appendItems {
@@ -341,12 +350,7 @@ extension MKHUDView {
                     item.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
                 ]
             )
-            if item == button {
-                // 按钮不希望被拉伸
-                contentView.addConstraint(item.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: insets.left))
-            } else {
-                contentView.addConstraint(item.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: insets.left).appendPriority(998))
-            }
+            contentView.addConstraint(item.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: insets.left))
             preItem = item
         }
         

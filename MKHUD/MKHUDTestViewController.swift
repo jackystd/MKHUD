@@ -43,7 +43,6 @@ class MKHUDTestViewController: UIViewController {
         
         ("Composite use case",
              [
-                ("My test", #selector(mytest)),
                 ("Quick use case", #selector(quickUseCase)),
                 ("Simulate the download process", #selector(simulateTheDownloadProcess)),
              ]
@@ -51,6 +50,7 @@ class MKHUDTestViewController: UIViewController {
         
         ("Test",
              [
+                ("My test", #selector(mytest)),
                 ("Unit test", #selector(unitTest)),
              ]
         ),
@@ -93,15 +93,12 @@ class MKHUDTestViewController: UIViewController {
     @objc func mytest() {
         let hud = MKHUDView(frame: self.view.bounds, theme: tstyle)
         hud.mode = .custom
-        let imgv = UIImageView(image: UIImage.init(named: "lock"))
-        imgv.frame = CGRect(x: 0, y: 0, width: 68, height: 68)
+        let imgv = UIImageView(image: UIImage.init(named: "maya"))
+        imgv.frame = CGRect(x: 0, y: 0, width: 50, height: 50)
+        hud.minSize = CGSize(width: 200, height: 300)
         hud.customView = imgv
-        hud.insets = UIEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
-        hud.spacing = 5
-        hud.suqared = true
-        hud.text = "Locked"
+        hud.text = "Hello World!"
         hud.autoHidden = 3.0
-        hud.corner = 10
         hud.animationMode = .zoomIn
         hud.show(to: self.view)
     }
