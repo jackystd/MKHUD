@@ -18,11 +18,17 @@ fileprivate let MKHUD_DefaultBarProgressSize: CGSize = CGSize(width: 128, height
 
 public final class MKHUDView: UIView {
     
-    private lazy var contentView: MKHUDBackgroundView = {
+    private lazy var backgroundView: MKHUDBackgroundView = {
         let v = MKHUDBackgroundView()
         v.color = self.theme.backgroundColor
         v.layer.cornerRadius = MKHUD_DefaultCorner
         v.layer.masksToBounds = true
+        return v
+    }()
+    
+    private lazy var contentView: UIView = {
+        let v = MKHUDBackgroundView()
+        v.color = .clear
         return v
     }()
     
@@ -83,7 +89,7 @@ public final class MKHUDView: UIView {
     /// 背景样式
     public var backgroundStyle: MKHUDBackgroundStyle = .solid {
         didSet {
-            contentView.style = backgroundStyle
+            backgroundView.style = backgroundStyle
         }
     }
     
@@ -107,14 +113,14 @@ public final class MKHUDView: UIView {
             if suqared == oldValue {
                 return
             }
-            resetContent()
+            remarkConstraints()
         }
     }
     
     /// 圆角
     public var corner: CGFloat = MKHUD_DefaultCorner {
         didSet {
-            contentView.layer.cornerRadius = corner
+            backgroundView.layer.cornerRadius = corner
         }
     }
     
@@ -131,9 +137,6 @@ public final class MKHUDView: UIView {
     public var text: String = "" {
         didSet {
             textLabel.text = text
-            if oldValue == text || (text.count > 0 && oldValue.count > 0) {
-                return
-            }
             remarkConstraints()
         }
     }
@@ -142,9 +145,6 @@ public final class MKHUDView: UIView {
     public var detailText: String = "" {
         didSet {
             detailLabel.text = detailText
-            if oldValue == detailText || (detailText.count > 0 && oldValue.count > 0) {
-                return
-            }
             remarkConstraints()
         }
     }
@@ -180,7 +180,7 @@ public final class MKHUDView: UIView {
     /// 最小尺寸
     public var minSize: CGSize? {
         didSet {
-            resetContent()
+            remarkConstraints()
         }
     }
     
@@ -229,19 +229,19 @@ extension MKHUDView {
     }
     
     private func setupSubviews() {
-        addSubview(contentView)
-        resetContent()
+        setupBackgroundView()
     }
     
     private func setupConstraints() {
         remarkConstraints()
     }
     
-    private func resetContent() {
+    private func setupBackgroundView() {
+        addSubview(backgroundView)
         // 移除旧约束
         var constraintsNeedRemove = [NSLayoutConstraint]()
         for cons in self.constraints {
-            if cons.firstItem as? NSObject == self.contentView && cons.secondItem as? NSObject == self {
+            if cons.firstItem as? NSObject == backgroundView && cons.secondItem as? NSObject == self {
                 constraintsNeedRemove.append(cons)
             }
         }
@@ -250,32 +250,20 @@ extension MKHUDView {
         // 居中
         self.addConstraints(
             [
-                contentView.centerXAnchor.constraint(equalTo: self.leadingAnchor, constant: self.frame.width.half),
-                contentView.centerYAnchor.constraint(equalTo: self.topAnchor, constant: self.frame.height.half),
+                backgroundView.centerXAnchor.constraint(equalTo: self.leadingAnchor, constant: self.frame.width.half),
+                backgroundView.centerYAnchor.constraint(equalTo: self.topAnchor, constant: self.frame.height.half),
             ]
         )
-        
-        // 最小尺寸
-        if let minSize = self.minSize {
-            self.addConstraints(
-                [
-                    contentView.widthAnchor.constraint(greaterThanOrEqualToConstant: minSize.width),
-                    contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: minSize.height)
-                ]
-            )
-        }
-        
-        // 强制宽高相等
-        if self.suqared {
-            self.addConstraint(contentView.widthAnchor.constraint(equalTo: contentView.heightAnchor))
-        }
+        backgroundView.addSubview(contentView)
     }
 }
 
 //MARK:updates
 extension MKHUDView {
     private func remarkConstraints() {
-        contentView.removeSubitems()
+        contentView.subviews.forEach {
+            $0.removeFromSuperview()
+        }
         
         var preItem: UIView = topLine
         contentView.addSubview(topLine)
@@ -359,7 +347,33 @@ extension MKHUDView {
         }
         
         contentView.addConstraint(preItem.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -insets.bottom))
+        contentView.layoutIfNeeded()
+        var bgSize: CGSize = contentView.frame.size
         
+        // 最小尺寸
+        if let minSize = self.minSize {
+            bgSize.width = max(minSize.width, contentView.frame.width)
+            bgSize.height = max(minSize.height, contentView.frame.height)
+        }
+        
+        // 强制宽高相等
+        if self.suqared {
+            let side = max(bgSize.width, bgSize.height)
+            bgSize = CGSize(width: side, height: side)
+        }
+        
+        backgroundView.removeConstraints(backgroundView.constraints)
+        backgroundView.addConstraints(
+            [
+                // for backgroundView size
+                backgroundView.widthAnchor.constraint(equalToConstant: bgSize.width),
+                backgroundView.heightAnchor.constraint(equalToConstant: bgSize.height),
+                // for contentView position
+                contentView.centerXAnchor.constraint(equalTo: backgroundView.leadingAnchor, constant: bgSize.width.half),
+                contentView.centerYAnchor.constraint(equalTo: backgroundView.topAnchor, constant: bgSize.height.half),
+            ]
+        )
+
     }
     
     private func updateProgressIfNeed() {
@@ -391,11 +405,11 @@ extension MKHUDView {
             self.layoutIfNeeded()
             
             let start_transform = animationMode == .zoomIn ? CGAffineTransform.init(scaleX: 0.5, y: 0.5) : CGAffineTransform.init(scaleX: 1.5, y: 1.5)
-            self.contentView.transform = start_transform
-            self.contentView.alpha = 0.0
+            self.backgroundView.transform = start_transform
+            self.backgroundView.alpha = 0.0
             let animationClosure = {
-                self.contentView.transform = CGAffineTransform.identity
-                self.contentView.alpha = 1.0
+                self.backgroundView.transform = CGAffineTransform.identity
+                self.backgroundView.alpha = 1.0
             }
             UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 0.0, options: .beginFromCurrentState, animations: animationClosure)
         }
@@ -419,8 +433,8 @@ extension MKHUDView {
         
         let finish_transform = animationMode == .zoomIn ? CGAffineTransform.init(scaleX: 0.5, y: 0.5) : CGAffineTransform.init(scaleX: 1.5, y: 1.5)
         let animationClosure = {
-            self.contentView.transform = finish_transform
-            self.contentView.alpha = 0.0
+            self.backgroundView.transform = finish_transform
+            self.backgroundView.alpha = 0.0
         }
         UIView.animate(withDuration: 0.2, delay: 0, usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0, options: .beginFromCurrentState, animations: animationClosure) { _ in
             self.removeFromSuperview()

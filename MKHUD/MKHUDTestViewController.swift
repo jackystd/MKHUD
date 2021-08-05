@@ -95,7 +95,8 @@ class MKHUDTestViewController: UIViewController {
         hud.mode = .custom
         let imgv = UIImageView(image: UIImage.init(named: "maya"))
         imgv.frame = CGRect(x: 0, y: 0, width: 50, height: 50)
-        hud.minSize = CGSize(width: 200, height: 300)
+//        hud.minSize = CGSize(width: 100, height: 120)
+        hud.suqared = true
         hud.customView = imgv
         hud.text = "Hello World!"
         hud.autoHidden = 3.0
